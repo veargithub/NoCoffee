@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
+import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v4.view.ViewPager.OnPageChangeListener;
 import android.util.AttributeSet;
@@ -43,16 +44,26 @@ public class SlideStripView extends LinearLayout implements OnPageChangeListener
 	protected void onDraw(Canvas canvas) {
 		super.onDraw(canvas);
 		initTabsWidth();
-		int stripWidth = tabsWidth[curTabIndex];//TODO java.lang.ArrayIndexOutOfBoundsException: length=2; index=2
-		int left = 0;
-		for (int i = 0; i < curTabIndex; i++) {
-			left += tabsWidth[i];
+//		int stripWidth = tabsWidth[curTabIndex];//TODO java.lang.ArrayIndexOutOfBoundsException: length=2; index=2
+//		int left = 0;
+//		for (int i = 0; i < curTabIndex; i++) {
+//			left += tabsWidth[i];
+//		}
+		final View currentTab = this.getChildAt(curTabIndex);
+		final int stripWidth = currentTab.getWidth();
+		int widthDiff = 0;
+		if (curTabIndex < this.getChildCount() - 1) {
+			final View nextTab = this.getChildAt(curTabIndex + 1);
+			widthDiff = nextTab.getWidth() - stripWidth;
 		}
-		int right = left + stripWidth;
+		Log.d(">>>>", "diff:" + widthDiff);
+		int offset = (int)(stripWidth * curPositionOffset);
+		int left = currentTab.getLeft() + offset;
+		int right = left + stripWidth + (int)(widthDiff * curPositionOffset);//strip的长度要调整
 		int height = this.getHeight();
 		int top = height - stripHeight;
 		int bottom = height;
-		Log.d(">>>>", left + " " + top + " " + right + " " + bottom);
+		//Log.d(">>>>", left + " " + top + " " + right + " " + bottom + " " + offset);
 		canvas.drawRect(left, top, right, bottom, stripPaint);
 	}
 	
@@ -85,6 +96,12 @@ public class SlideStripView extends LinearLayout implements OnPageChangeListener
 	public void setViewPager(ViewPager viewPager) {
 		this.pager = viewPager;
 		pager.setOnPageChangeListener(this);
+		final PagerAdapter adapter = pager.getAdapter();
+		if (adapter != null) {
+			if (adapter.getCount() != this.getChildCount()) {
+				throw new IllegalStateException("the count of pager must be the same as strips'");
+			}
+		}
 	}
 
 	@Override
@@ -97,7 +114,9 @@ public class SlideStripView extends LinearLayout implements OnPageChangeListener
 	public void onPageScrolled(int arg0, float arg1, int arg2) {
 		curTabIndex = arg0;//arg0永远是左边的那个
 		curPositionOffset = arg1;//arg1是右边那个view的宽度与它的容器宽度的比
+		//curPositionOffset = 1.0f - curPositionOffset;
 		Log.d(">>>>", "curTabIndex:" + curTabIndex + ", curPositionOffset:" + curPositionOffset);
+		invalidate();
 	}
 
 	@Override
